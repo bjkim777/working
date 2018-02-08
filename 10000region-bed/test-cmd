@@ -1,0 +1,1 @@
+python split-region.py -b Exome-Agilent_V6_UTR_Padded.bed
