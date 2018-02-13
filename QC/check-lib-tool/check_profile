@@ -1,0 +1,10 @@
+#PTNS v1.1
+
+# LIB
+TOOLIB=/toolib/bin
+export PATH=$TOOLIB:$PATH
+#export LD_LIBRARY_PATH=/toolib/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/toolib/lib
+
+# BIO TOOLS
+export PATH=$PATH:/usr/local/bin/samtools

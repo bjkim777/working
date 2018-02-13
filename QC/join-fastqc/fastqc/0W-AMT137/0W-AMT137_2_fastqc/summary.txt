@@ -1,0 +1,11 @@
+PASS	Basic Statistics	0W-AMT137_2.fastq.gz
+PASS	Per base sequence quality	0W-AMT137_2.fastq.gz
+PASS	Per sequence quality scores	0W-AMT137_2.fastq.gz
+PASS	Per base sequence content	0W-AMT137_2.fastq.gz
+PASS	Per base GC content	0W-AMT137_2.fastq.gz
+WARN	Per sequence GC content	0W-AMT137_2.fastq.gz
+PASS	Per base N content	0W-AMT137_2.fastq.gz
+PASS	Sequence Length Distribution	0W-AMT137_2.fastq.gz
+WARN	Sequence Duplication Levels	0W-AMT137_2.fastq.gz
+PASS	Overrepresented sequences	0W-AMT137_2.fastq.gz
+PASS	Kmer Content	0W-AMT137_2.fastq.gz

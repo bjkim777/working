@@ -1,0 +1,32 @@
+## 돌리기전 주의사항
+R에 들어가서 capabilities()를 입력해서 png가 TRUE인지 확인 해야함 (현재 ads7번 서버 지원 안됨)
+
+## Moving average의 데이터를 그리기 위해서 만들어진 script (ppt의 Cancer panel 구간 내 depth frequency)
+moving_average.R [input file] [main text] [output file]
+## 사용 파라미터
+[input file] 김주임님이 만들어주신 파일 *.movave 이 파일과 같은 구성으로 되어 있어야 함
+[main text] 그림의 메인이 되는 text 입니다. (예제 KIST_2R_DNA , KIST_3R_DNA 같은 표본의 이름을 집어 넣으면 됩니다.) 
+[output file] 그림이 저장이 되는 파일 이름. 꼭 *.png로 끝나야 함 
+
+## VAF의 데이터를 그리기 위해서 만들어진 script (ppt의 Cancer panel 구간 내 VAF 경향)
+vaf.R
+## 사용 파라미터
+[input file] 김주임님이 만들어주신 파일 *.vaf 이 파일과 같은 구성으로 되어 있어야 함
+[main text] 그림의 메인이 되는 text 입니다. (예제 KIST_2R_DNA_VAF , KIST_3R_DNA_VAF 같은 표본의 이름 같은 이 표본을 나타낼 수 있는 이름을 집어 넣으면 됩니다.) 
+[output file] 그림이 저장이 되는 파일 이름. 꼭 *.png로 끝나야 함
+
+## 기준이 되는 표본과 비교하고 싶은 표본간의 correlation을 scatter plot으로 그리기 위한 script
+correlation.R
+## 사용 파라미터
+[input file] 김주임님이 만들어주신 파일 *.rsq 이 파일과 같은 구성으로 되어 있어야 함
+[X sample] X 축에 들어가는 표본에 대한 정보 (예제 51 breast cancer samples. 기준이 되는 표본의 정보)
+[Y sample] Y 축에 들어가는 표본에 대한 정보 (예제 KIST 2R DNA, KIST 3R DNA. 비교가 되는 표본의 정보)
+[main text] 그림의 메인이 되는 text 입니다. (예제 KIST_2R_DNA_VAF , KIST_3R_DNA_VAF 같은 표본의 이름 같은 이 표본을 나타낼 수 있는 이름을 집어 넣으면 됩니다.) 
+[output file] 그림이 저장이 되는 파일 이름. 꼭 *.png로 끝나야 함
+
+## 누적이되는 VAF를 MAF 별로 그리기 위해서 만들어진 script (ppt의 Cancer panel 구간 내 누적 VAF)
+maf.R
+## 사용 파라미터
+[input file] 김주임님이 만들어주신 파일 *.maf-result 이 파일과 같은 구성으로 되어 있어야 함
+[main text] 그림의 메인이 되는 text 입니다. (예제 KIST_2R_DNA , KIST_3R_DNA 같은 표본의 이름 같은 이 표본을 나타낼 수 있는 이름을 집어 넣으면 됩니다.) 
+[output file] 그림이 저장이 되는 파일 이름. 꼭 *.png로 끝나야 함

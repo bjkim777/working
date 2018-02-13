@@ -1,0 +1,11 @@
+PASS	Basic Statistics	AMT029_1.fastq.gz
+PASS	Per base sequence quality	AMT029_1.fastq.gz
+PASS	Per sequence quality scores	AMT029_1.fastq.gz
+PASS	Per base sequence content	AMT029_1.fastq.gz
+PASS	Per base GC content	AMT029_1.fastq.gz
+FAIL	Per sequence GC content	AMT029_1.fastq.gz
+PASS	Per base N content	AMT029_1.fastq.gz
+PASS	Sequence Length Distribution	AMT029_1.fastq.gz
+WARN	Sequence Duplication Levels	AMT029_1.fastq.gz
+PASS	Overrepresented sequences	AMT029_1.fastq.gz
+PASS	Kmer Content	AMT029_1.fastq.gz

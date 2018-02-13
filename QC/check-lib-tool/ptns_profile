@@ -1,0 +1,42 @@
+#PTNS v1.1
+
+# LIB
+TOOLIB=/toolib/bin
+export PATH=$TOOLIB:$PATH
+#export LD_LIBRARY_PATH=/toolib/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/toolib/lib
+
+# BIO TOOLS
+export PATH=$PATH:/tools/bio-tools/bwa-0.7.10
+export PATH=$PATH:/tools/bio-tools/samtools-1.1
+export PATH=$PATH:/tools/bio-tools/FastQC
+export PATH=$PATH:/tools/bio-tools/qualimap_v2.1.3
+export PATH=$PATH:/tools/bio-tools/sickle/ 		#add by smkang 2016.01.14
+export PATH=$PATH:/tools/bio-tools/tabix-0.2.6
+export PATH=$PATH:/tools/bio-tools/annovar
+export PATH=$PATH:/tools/bio-tools/polyphen-2.2.2/bin
+export PATH=$PATH:/tools/bio-tools/snpEff
+export PATH=$PATH:/tools/bio-tools/multiqc-0.7
+export PATH=$PATH:/tools/bio-tools/wisecondor_python
+export PATH=$PATH:/tools/bio-tools/gatk-3.3-0
+
+# SYNTEKABIO TOOLS
+export PATH=$PATH:/tools/gear
+export PATH=$PATH:/tools/gear/hla_typing
+export PATH=$PATH:/tools/gear/tabix-syn
+
+#export PATH="/tools/bio-tools/miniconda3/bin:$PATH"
+
+# User specific aliases and functions
+alias bwa.csh='/tools/bio-src/ngs_al/WES/bwa.csh'
+alias bowtie.csh='/tools/bio-src/ngs_al/WES/bowtie.csh'
+alias gsnap.csh='/tools/bio-src/ngs_al/WES/gsnap.csh'
+alias snp_call_gatk.csh='/tools/bio-src/ngs_al/WES/snp_call_gatk_mult.csh'
+alias snp_call_varscan.csh='/tools/bio-src/ngs_al/WES/snp_call_varscan_mult.csh'
+alias snp_call_mutect.csh='/tools/bio-src/ngs_al/WES/snp_call_mutect_mult.csh'
+alias snp_call_samtool.csh='/tools/bio-src/ngs_al/WES/snp_call_samtool_mult.csh'
+alias babel_run.csh='/tools/bio-src/rvr_gears/babel/babel_run.csh'
+alias blast_run.csh='/tools//bio-src/rvr_gears/blast/blast_run.csh'
+alias gene_map.csh='/tools/bio-src/bmap_run/Gene/bmap.gene.run.csh'
+alias comp_map.csh='/tools/bio-src/bmap_run/Compound/bmap.compound.run.csh'
+alias snp_map.csh='/tools/bio-src/bmap_run/SNP/bmap.snp.run.csh'
