@@ -1,4 +1,5 @@
-#source /tools/.bio_profile ; cd /MDI/1000G-build38/test/chrM ; time python /MDI/1000G-build38/test/makeigdb.py -p 1000G -c chrM -s /MDI/1000G-build38/test/1000g-bam-list -o /MDI/1000G-build38/test
+# Add part of make IGDB input files
+#source /tools/.bio_profile ; cd /MDI/1000G-build38/test ; time python /MDI/1000G-build38/test/makeigdb.py -p 1000G -b /awork08/kimbj-working/parallel-igds/build38-bed/wes/chrMT.bed -s /MDI/1000G-build38/test/1000g-bam-list -o /MDI/1000G-build38/test
 
 import os
 import sys
@@ -11,10 +12,11 @@ RVR='/awork08/kimbj-working/parallel-igds/tools/rvr'
 RVR_SEQ='/awork08/kimbj-working/parallel-igds/tools/rvr_seq'
 IGDS='/awork08/kimbj-working/parallel-igds/tools/makeIdaInput_v1.0'
 IGSCAN='/awork08/kimbj-working/parallel-igds/tools/igscan'
+REF='/awork08/BUILD38-SOURCE/build38-1000g-ref/GRCh38_full_analysis_set_plus_decoy_hla.fa'
 
 def checkFiles():
 	index=0
-	for LIST in [PED_PATH, RVR, RVR_SEQ, IGSCAN]:
+	for LIST in [PED_PATH, RVR, RVR_SEQ, IGDS, IGSCAN]:
 		if os.path.exists(LIST):
 			pass
 		else:
@@ -29,7 +31,7 @@ def getOpts():
 	parser = argparse.ArgumentParser(description = '')
 	parser.add_argument('-p', '--project', type=str, required=True,  metavar= '<project name>', help= 'project name.\
 			Directory in igds library = project.')
-	parser.add_argument('-c', '--chr', type=str, required=True,  metavar= '<chromosome>', help= 'chromosome')
+	parser.add_argument('-b', '--bed', type=str, required=True,  metavar= '<bed file>', help= 'bed')
 	parser.add_argument('-s', '--sample_list', type=str, required=True,  metavar= '<sample list; bam file full path>', help= 'bam file path')
 	parser.add_argument('-o', '--output_path', type=str, required=True,  metavar= '<output path>', help= 'output')
 	argv = parser.parse_args()
@@ -37,12 +39,21 @@ def getOpts():
 
 
 class MakeIDA:
-	def __init__(self, project, chr, sample_list, output_path):
+	def __init__(self, project, bed, sample_list, output_path):
 		self.output_path=output_path
-		self.chr=chr
+		self.bed=bed
 		self.project=project
 		self.sample_list=sample_list
-		self.name_prefix='{project}_{chr}'.format(project=project, chr=chr)
+		self.name_prefix='{project}_{chr}'.format(project=project, chr=bed.split('/')[-1].split('.bed')[0])
+		self.chr=bed.split('/')[-1].split('.bed')[0]
+
+	def makeInput(self):
+		OUTPUT='{output_path}/{chr}'.format(output_path=self.output_path, chr=self.chr)
+
+		if not os.path.isdir(OUTPUT):
+			os.mkdir(OUTPUT)
+
+		subprocess.call([IGDS, '-l', self.sample_list, '-r', REF, '-o', OUTPUT, '-b', self.bed])
 
 	def searchFile(self):
 		for (path, dir, files) in os.walk(self.output_path):
@@ -119,7 +130,7 @@ class MakeIDA:
 		if os.path.exists(ANN):
 			subprocess.call(['rm', '-f', ANN])
 
-		def decideAlt(self, ref):
+		def decideAlt(ref):
 			if ref=="A":
 				return "T"
 			elif ref=="T":
@@ -139,7 +150,7 @@ class MakeIDA:
 					pos=col[1]
 					ref=col[2]
 
-					ann.write('{chr_pos} Gene_{index} {chr} {pos} none_{index} {ref} {alt}'.format(chr_pos='_'.join(col[0:2]), index=index+1, chr=chr, pos=pos, ref=ref, alt=self.decideAlt(ref)))
+					ann.write('{chr_pos} Gene_{index} {chr} {pos} none_{index} {ref} {alt}\n'.format(chr_pos='_'.join(col[0:2]), index=index+1, chr=chr, pos=pos, ref=ref, alt=decideAlt(ref)))
 		return ANN
 
 
@@ -155,7 +166,8 @@ class MakeIDA:
 		subprocess.call(['cp', '{igdb_lib}/{project}/{project}.var'.format(igdb_lib=PED_PATH, project=self.project), '{output_path}/{chr}/{name_prefix}.var'.format(output_path=self.output_path, chr=self.chr, name_prefix=self.name_prefix)])
 		subprocess.call(['cp', '{igdb_lib}/{project}/{project}.van'.format(igdb_lib=PED_PATH, project=self.project), '{output_path}/{chr}/{name_prefix}.van'.format(output_path=self.output_path, chr=self.chr, name_prefix=self.name_prefix)])
 		self.makeAnn()
-
+		
+		os.chdir('{output_path}/{chr}'.format(output_path=self.output_path,chr=self.chr))
 		subprocess.call([IGSCAN, '-s', 'rvrd', self.makePara()])
 
 	# ---------------------------------- Move to finalize -----------------------------------
@@ -222,10 +234,11 @@ class MakeIDA:
 		os.system('md5sum {tar_path}/{name_prefix}.igdb.tgz | sed "s/\(\s\+\).*\//  /" > {tar_path}/{name_prefix}.igdb.tgz.md5'.format(tar_path=OUTPUT_TAR, name_prefix=self.name_prefix))
 
 ### MAIN ###
-def main (project, chr, sample_list, output_path):
+def main (project, bed, sample_list, output_path):
 	checkFiles()
-	RUN=MakeIDA(project, chr, sample_list, output_path)
+	RUN=MakeIDA(project, bed, sample_list, output_path)
 
+	RUN.makeInput()
 	RUN.makeIupacDB()
 	RUN.makeRv7DB()
 	RUN.makeIGDB()
@@ -236,5 +249,5 @@ def main (project, chr, sample_list, output_path):
 if __name__ == "__main__":
 	argv = getOpts()
 
-	main(argv.project, argv.chr, argv.sample_list, argv.output_path)
+	main(argv.project, argv.bed, argv.sample_list, argv.output_path)
 	sys.exit(0)
