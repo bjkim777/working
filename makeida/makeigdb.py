@@ -1,5 +1,6 @@
 # Add part of make IGDB input files
-#source /tools/.bio_profile ; cd /MDI/1000G-build38/test ; time python /MDI/1000G-build38/test/makeigdb.py -p 1000G -b /awork08/kimbj-working/parallel-igds/build38-bed/wes/chrMT.bed -s /MDI/1000G-build38/test/1000g-bam-list -o /MDI/1000G-build38/test
+# need pigz
+# Don't use relative path
 
 import os
 import sys
@@ -146,11 +147,11 @@ class MakeIDA:
 			with open(self.searchFile()[2], 'r') as key:
 				for index, line in enumerate(key.xreadlines()):
 					col=line.strip().split('_')
-					chr=col[0]
-					pos=col[1]
-					ref=col[2]
+					chr='_'.join(col[0:-2])
+					pos=col[-2]
+					ref=col[-1]
 
-					ann.write('{chr_pos} Gene_{index} {chr} {pos} none_{index} {ref} {alt}\n'.format(chr_pos='_'.join(col[0:2]), index=index+1, chr=chr, pos=pos, ref=ref, alt=decideAlt(ref)))
+					ann.write('{chr_pos} Gene_{index} {chr} {pos} none_{index} {ref} {alt}\n'.format(chr_pos=str(chr)+'_'+str(pos), index=index+1, chr=chr, pos=pos, ref=ref, alt=decideAlt(ref)))
 		return ANN
 
 
