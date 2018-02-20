@@ -2,10 +2,11 @@
 # need pigz
 # Don't use relative path
 
+from __future__ import print_function	# print stderr 
 import os
 import sys
 import subprocess
-import shutil
+import shutil						# move directory
 import argparse
 
 PED_PATH='/awork08/IGDB-ann/build38/wes/ped'
@@ -15,18 +16,44 @@ IGDS='/awork08/kimbj-working/parallel-igds/tools/makeIdaInput_v1.0'
 IGSCAN='/awork08/kimbj-working/parallel-igds/tools/igscan'
 REF='/awork08/BUILD38-SOURCE/build38-1000g-ref/GRCh38_full_analysis_set_plus_decoy_hla.fa'
 
-def checkFiles():
+def checkFiles(bam_list):
+	SAMPLE={}
 	index=0
-	for LIST in [PED_PATH, RVR, RVR_SEQ, IGDS, IGSCAN]:
+	for LIST in [PED_PATH, RVR, RVR_SEQ, IGDS, IGSCAN, REF]:
 		if os.path.exists(LIST):
 			pass
 		else:
-			print ('{file} is empty.'.format(file=LIST))
+			print ('{file} is not exist.'.format(file=LIST), file=sys.stderr)
 			index+=1
 			continue
 
+	with open(bam_list, 'r') as f:
+		for line in f:
+			sample=line.strip().split('/')[-1].split('.')[0]
+
+			# check size
+			if os.path.getsize(line.strip()) <= 1048576: # 1MB
+				print ('{file} is empty.'.format(file=line.strip()), file=sys.stderr)
+				index+=1
+			
+			# check duplication
+			if str(sample) in SAMPLE:
+				SAMPLE[str(sample)]+=1
+			else:
+				SAMPLE[str(sample)]=1
+		
 	if not index==0:
-		exit(1)
+		raise Exception('Files are not exist or empty.')
+
+	dul=0
+	for i, key in enumerate(SAMPLE.keys()):
+		if not SAMPLE(str(key)) is 1:
+			print (key, file=sys.stderr)
+			dul+=1
+
+	if not dul==0:
+		raise Exception('duplication')
+
 
 def getOpts():
 	parser = argparse.ArgumentParser(description = '')
@@ -57,7 +84,7 @@ class MakeIDA:
 		subprocess.call([IGDS, '-l', self.sample_list, '-r', REF, '-o', OUTPUT, '-b', self.bed])
 
 	def searchFile(self):
-		for (path, dir, files) in os.walk(self.output_path):
+		for (path, dir, files) in os.walk(self.output_path + "/" + self.chr):
 			for file in files:
 				if file == 'gtx':
 					gtx=os.path.join(path, file)
@@ -155,7 +182,7 @@ class MakeIDA:
 		return ANN
 
 
-	# ------------------------------------ Make DB -----------------------------------------------
+	# ------------------------------------R Make DB -----------------------------------------------
 	def makeIupacDB(self):
 		subprocess.call([RVR_SEQ, '-w', 'seq', self.searchFile()[3], '{output_path}/{name_prefix}.iupac_d'.format(output_path=self.output_path, name_prefix=self.name_prefix), 'rkey_file', self.searchFile()[2], 'ckey_file', self.makeCkey()[0]])
 
@@ -184,16 +211,15 @@ class MakeIDA:
 		for dir in [OUTPUT_IDA, OUTPUT_RV7, OUTPUT_IUPAC, OUTPUT_TAR]:
 			if not os.path.isdir(dir):
 				os.mkdir(dir)
-
 		
+		index=0
 		for db in [IUPAC_DB, RV7_DB, IGDB]:
-			index=0
 			if not os.path.isdir(db) or not os.listdir(db):
-				print ('{db} is not exist.'.format(db=db))
+				print ('{db} is not exist.'.format(db=db), file=sys.stderr)
 				index+=1
 
 		if not index==0:
-			exit(1)
+			raise Exception('DB is not exist.')
 
 		# -------------------------------------------------------
 		# move outputs
@@ -207,9 +233,14 @@ class MakeIDA:
 		# -------------------------------------------------------
 		os.system('sync;sync;sync;sleep 1m')
 
-		os.system('{igscan} -a qc -r {igdb_path}/{chr}/rvr_d mrrn 1 &>/dev/null'.format(igscan=IGSCAN, igdb_path=OUTPUT_IDA, chr=self.chr))		
-		os.system('{rvr} -r {rv7_path}/{name_prefix}.dp_d rrrn 1 &>/dev/null'.format(rvr=RVR, rv7_path=OUTPUT_RV7, name_prefix=self.name_prefix))		
-		os.system('{rvr} -r {iupac_path}/{name_prefix}.iupac_d rrrn 1 &>/dev/null'.format(rvr=RVR, iupac_path=OUTPUT_IUPAC, name_prefix=self.name_prefix))
+		check_igdb=subprocess.Popen([IGSCAN, '-r', '{igdb_path}/{chr}/rvr_d'.format(igdb_path=OUTPUT_IDA, chr=self.chr), 'mrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
+		check_rv7=subprocess.Popen([RVR, '-r', '{rv7_path}/{name_prefix}.dp_d'.format(rv7_path=OUTPUT_RV7, name_prefix=self.name_prefix),'rrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
+		check_iupac=subprocess.Popen([RVR, '-r', '{iupac_path}/{name_prefix}.iupac_d'.format(iupac_path=OUTPUT_IUPAC, name_prefix=self.name_prefix), 'rrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
+
+		for result in [check_igdb, check_iupac, check_rv7]:
+			if '\x00' in result: # empty line
+				raise Exception('DB is empty.')
+
 
 		# -------------------------------------------------------
 		# tar backup
@@ -236,7 +267,7 @@ class MakeIDA:
 
 ### MAIN ###
 def main (project, bed, sample_list, output_path):
-	checkFiles()
+	checkFiles(sample_list)
 	RUN=MakeIDA(project, bed, sample_list, output_path)
 
 	RUN.makeInput()
