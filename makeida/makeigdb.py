@@ -47,7 +47,7 @@ def checkFiles(bam_list):
 
 	dul=0
 	for i, key in enumerate(SAMPLE.keys()):
-		if not SAMPLE(str(key)) is 1:
+		if not SAMPLE[str(key)] is 1:
 			print (key, file=sys.stderr)
 			dul+=1
 
