@@ -9,17 +9,29 @@ import subprocess
 import shutil						# move directory
 import argparse
 
+
 PED_PATH='/awork08/IGDB-ann/build38/wes/ped'
 RVR='/awork08/kimbj-working/parallel-igds/tools/rvr'
 RVR_SEQ='/awork08/kimbj-working/parallel-igds/tools/rvr_seq'
 IGDS='/awork08/kimbj-working/parallel-igds/tools/makeIdaInput_v1.0'
 IGSCAN='/awork08/kimbj-working/parallel-igds/tools/igscan'
 REF='/awork08/BUILD38-SOURCE/build38-1000g-ref/GRCh38_full_analysis_set_plus_decoy_hla.fa'
+TOOL_SOURCE='/tools/.bio_profile'
+
+def source(script, update=1):
+	pipe = subprocess.Popen(". %s; env" % script, stdout=subprocess.PIPE, shell=True)
+	data = pipe.communicate()[0]
+
+	env = dict((line.split("=", 1) for line in data.splitlines()))
+	if update:
+		os.environ.update(env)
+
+	return env
 
 def checkFiles(bam_list):
 	SAMPLE={}
 	index=0
-	for LIST in [PED_PATH, RVR, RVR_SEQ, IGDS, IGSCAN, REF]:
+	for LIST in [PED_PATH, RVR, RVR_SEQ, IGDS, IGSCAN, REF, TOOL_SOURCE]:
 		if os.path.exists(LIST):
 			pass
 		else:
@@ -182,7 +194,7 @@ class MakeIDA:
 		return ANN
 
 
-	# ------------------------------------R Make DB -----------------------------------------------
+	# ------------------------------------ Make DB -----------------------------------------------
 	def makeIupacDB(self):
 		subprocess.call([RVR_SEQ, '-w', 'seq', self.searchFile()[3], '{output_path}/{name_prefix}.iupac_d'.format(output_path=self.output_path, name_prefix=self.name_prefix), 'rkey_file', self.searchFile()[2], 'ckey_file', self.makeCkey()[0]])
 
@@ -238,7 +250,7 @@ class MakeIDA:
 		check_iupac=subprocess.Popen([RVR, '-r', '{iupac_path}/{name_prefix}.iupac_d'.format(iupac_path=OUTPUT_IUPAC, name_prefix=self.name_prefix), 'rrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
 
 		for result in [check_igdb, check_iupac, check_rv7]:
-			if '\x00' in result: # empty line
+			if '\x00' in result:
 				raise Exception('DB is empty.')
 
 
@@ -268,8 +280,12 @@ class MakeIDA:
 ### MAIN ###
 def main (project, bed, sample_list, output_path):
 	checkFiles(sample_list)
-	RUN=MakeIDA(project, bed, sample_list, output_path)
+	
+	# ENV PATH
+	source(TOOL_SOURCE)	
 
+	RUN=MakeIDA(project, bed, sample_list, output_path)
+	
 	RUN.makeInput()
 	RUN.makeIupacDB()
 	RUN.makeRv7DB()
