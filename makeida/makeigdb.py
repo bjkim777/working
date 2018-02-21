@@ -224,14 +224,32 @@ class MakeIDA:
 			if not os.path.isdir(dir):
 				os.mkdir(dir)
 		
+		# -------------------------------------------------------
+		# check outputs
+		# -------------------------------------------------------
+		os.system('sync;sync;sync;sleep 1m')
+
+		check_igdb=subprocess.Popen([IGSCAN, '-r', IGDB+'/'+'rvr_d', 'mrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
+		check_rv7=subprocess.Popen([RVR, '-r', RV7_DB,'rrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
+		check_iupac=subprocess.Popen([RVR, '-r', IUPAC_DB, 'rrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
+
 		index=0
 		for db in [IUPAC_DB, RV7_DB, IGDB]:
 			if not os.path.isdir(db) or not os.listdir(db):
 				print ('{db} is not exist.'.format(db=db), file=sys.stderr)
 				index+=1
 
-		if not index==0:
+		if not index is 0:
 			raise Exception('DB is not exist.')
+
+		empty=0
+		for result in [[str(check_igdb), str(IGDB+'/'+'rvr_d')], [str(check_iupac), str(IUPAC_DB)], [str(check_rv7), str(RV7_DB)]]:
+			if '\x00' in result[0]:
+				print ('{db} is empty.'.format(db=result[1]), file=sys.stderr)
+				empty+=1
+
+		if not empty is 0:
+			raise Exception('DB is empty.')
 
 		# -------------------------------------------------------
 		# move outputs
@@ -239,20 +257,6 @@ class MakeIDA:
 		shutil.move(IUPAC_DB, OUTPUT_IUPAC)
 		shutil.move(RV7_DB, OUTPUT_RV7)
 		shutil.move(IGDB, OUTPUT_IDA)
-
-		# -------------------------------------------------------
-		# check outputs
-		# -------------------------------------------------------
-		os.system('sync;sync;sync;sleep 1m')
-
-		check_igdb=subprocess.Popen([IGSCAN, '-r', '{igdb_path}/{chr}/rvr_d'.format(igdb_path=OUTPUT_IDA, chr=self.chr), 'mrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
-		check_rv7=subprocess.Popen([RVR, '-r', '{rv7_path}/{name_prefix}.dp_d'.format(rv7_path=OUTPUT_RV7, name_prefix=self.name_prefix),'rrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
-		check_iupac=subprocess.Popen([RVR, '-r', '{iupac_path}/{name_prefix}.iupac_d'.format(iupac_path=OUTPUT_IUPAC, name_prefix=self.name_prefix), 'rrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
-
-		for result in [check_igdb, check_iupac, check_rv7]:
-			if '\x00' in result:
-				raise Exception('DB is empty.')
-
 
 		# -------------------------------------------------------
 		# tar backup
