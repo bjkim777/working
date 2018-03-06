@@ -37,7 +37,6 @@ def checkFiles(bam_list):
 		else:
 			print ('{file} is not exist.'.format(file=LIST), file=sys.stderr)
 			index+=1
-			continue
 
 	with open(bam_list, 'r') as f:
 		for line in f:
@@ -138,6 +137,7 @@ class MakeIDA:
 		PARA='{output_path}/{chr}/{name_prefix}.para'.format(output_path=self.output_path, chr=self.chr, name_prefix=self.name_prefix)
 		n_sample = sum(1 for line in open(self.sample_list))
 		n_marker=sum(1 for line in open(self.searchFile()[2]))
+		n_van_line=sum(1 for line in open('{igdb_lib}/{project}/{project}.van'.format(igdb_lib=PED_PATH, project=self.project)))
 
 		if os.path.exists(PARA):
 			subprocess.call(['rm', '-f', PARA])
@@ -151,9 +151,9 @@ class MakeIDA:
 			para.write('#PED_lines {n_sample}\n'.format(n_sample=n_sample))
 			para.write('#VAN_file {name_prefix}.van\n'.format(name_prefix=self.name_prefix))
 			para.write('#VAN_fields 1\n')
-			para.write('#VAN_lines 4\n')
+			para.write('#VAN_lines {}\n'.format(n_van_line))
 			para.write('#VAR_file {name_prefix}.var\n'.format(name_prefix=self.name_prefix))
-			para.write('#VAR_fields 4\n')
+			para.write('#VAR_fields {}\n'.format(n_van_line))
 			para.write('#VAR_lines {n_sample}\n'.format(n_sample=n_sample))
 			para.write('#GTX_file gtx\n')
 			para.write('#GTX_chars {n_sample}\n'.format(n_sample=n_sample))
@@ -208,6 +208,7 @@ class MakeIDA:
 		self.makeAnn()
 		
 		os.chdir('{output_path}/{chr}'.format(output_path=self.output_path,chr=self.chr))
+		# need 'source /tools/.bio_profile'
 		subprocess.call([IGSCAN, '-s', 'rvrd', self.makePara()])
 
 	# ---------------------------------- Move to finalize -----------------------------------
@@ -244,7 +245,7 @@ class MakeIDA:
 
 		empty=0
 		for result in [[str(check_igdb), str(IGDB+'/'+'rvr_d')], [str(check_iupac), str(IUPAC_DB)], [str(check_rv7), str(RV7_DB)]]:
-			if '\x00' in result[0]:
+			if '\x00' in result[0]:	# empty line
 				print ('{db} is empty.'.format(db=result[1]), file=sys.stderr)
 				empty+=1
 
@@ -286,7 +287,7 @@ def main (project, bed, sample_list, output_path):
 	checkFiles(sample_list)
 	
 	# ENV PATH
-	source(TOOL_SOURCE)	
+	source(TOOL_SOURCE)
 
 	RUN=MakeIDA(project, bed, sample_list, output_path)
 	
