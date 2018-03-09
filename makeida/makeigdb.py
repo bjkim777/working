@@ -230,7 +230,7 @@ class MakeIDA:
 		# -------------------------------------------------------
 		os.system('sync;sync;sync;sleep 1m')
 
-		check_igdb=subprocess.Popen([IGSCAN, '-r', IGDB+'/'+'rvr_d', 'mrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
+		check_igdb=subprocess.Popen([IGSCAN, '-a', 'qc', '-r', IGDB+'/'+'rvr_d', 'mrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
 		check_rv7=subprocess.Popen([RVR, '-r', RV7_DB,'rrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
 		check_iupac=subprocess.Popen([RVR, '-r', IUPAC_DB, 'rrrn', '1'], stdout=subprocess.PIPE).stdout.readlines()[0]
 
