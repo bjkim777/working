@@ -8,7 +8,7 @@ import sys
 import subprocess
 import shutil						# move directory
 import argparse
-
+import time
 
 PED_PATH='/awork08/IGDB-ann/build38/wes/ped'
 RVR='/awork08/kimbj-working/parallel-igds/tools/rvr'
@@ -18,6 +18,19 @@ IGSCAN='/awork08/kimbj-working/parallel-igds/tools/igscan'
 REF='/awork08/BUILD38-SOURCE/build38-1000g-ref/GRCh38_full_analysis_set_plus_decoy_hla.fa'
 TOOL_SOURCE='/tools/.bio_profile'
 
+# decorator
+def runTime(func):
+	def wrapper(*args, **kwargs):
+		start=time.time()
+		result=func(*args, **kwargs)
+		end=time.time()
+
+		print ('# module : {0} / time(sec) : {1}'.format(func.__name__, end-start))
+
+		return result
+	return wrapper
+
+# import environment
 def source(script, update=1):
 	pipe = subprocess.Popen(". %s; env" % script, stdout=subprocess.PIPE, shell=True)
 	data = pipe.communicate()[0]
@@ -76,7 +89,6 @@ def getOpts():
 	argv = parser.parse_args()
 	return(argv)
 
-
 class MakeIDA:
 	def __init__(self, project, bed, sample_list, output_path):
 		self.output_path=output_path
@@ -86,6 +98,7 @@ class MakeIDA:
 		self.name_prefix='{project}_{chr}'.format(project=project, chr=bed.split('/')[-1].split('.bed')[0])
 		self.chr=bed.split('/')[-1].split('.bed')[0]
 
+	@runTime
 	def makeInput(self):
 		OUTPUT='{output_path}/{chr}'.format(output_path=self.output_path, chr=self.chr)
 
@@ -195,12 +208,15 @@ class MakeIDA:
 
 
 	# ------------------------------------ Make DB -----------------------------------------------
+	@runTime
 	def makeIupacDB(self):
 		subprocess.call([RVR_SEQ, '-w', 'seq', self.searchFile()[3], '{output_path}/{name_prefix}.iupac_d'.format(output_path=self.output_path, name_prefix=self.name_prefix), 'rkey_file', self.searchFile()[2], 'ckey_file', self.makeCkey()[0]])
 
+	@runTime
 	def makeRv7DB(self):
 		subprocess.call([RVR, '-w', 'int', self.searchFile()[1], '{output_path}/{name_prefix}.dp_d'.format(output_path=self.output_path, name_prefix=self.name_prefix), 'ckey_file', self.makeCkey()[1], 'rkey_file', self.searchFile()[2]])
 
+	@runTime
 	def makeIGDB(self):
 		subprocess.call(['cp', '{igdb_lib}/{project}/{project}.ped'.format(igdb_lib=PED_PATH, project=self.project), '{output_path}/{chr}/{name_prefix}.ped'.format(output_path=self.output_path, chr=self.chr, name_prefix=self.name_prefix)])
 		subprocess.call(['cp', '{igdb_lib}/{project}/{project}.var'.format(igdb_lib=PED_PATH, project=self.project), '{output_path}/{chr}/{name_prefix}.var'.format(output_path=self.output_path, chr=self.chr, name_prefix=self.name_prefix)])
@@ -212,6 +228,7 @@ class MakeIDA:
 		subprocess.call([IGSCAN, '-s', 'rvrd', self.makePara()])
 
 	# ---------------------------------- Move to finalize -----------------------------------
+	@runTime
 	def moveToFinalize(self):
 		OUTPUT_RV7='{output_path}/RV7'.format(output_path=self.output_path)
 		OUTPUT_IUPAC='{output_path}/IUPAC'.format(output_path=self.output_path)
