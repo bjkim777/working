@@ -47,7 +47,7 @@ def checkResult(result_paths, ext):
 		# -------------------------------
 		def findOutlier(list):
 			list.sort()
-			q1_index, q3_index =(len(list)+1)/4 , (len(list)+1)*3/4
+			q1_index, q3_index =((len(list)+1)/4)-1 , ((len(list)+1)*3/4)-1  # why -1 : list index
 
 			if len(list)%2 is 0:
 				q1=(list[int(q1_index)][0]+list[int(math.ceil(q1_index))][0])/2
