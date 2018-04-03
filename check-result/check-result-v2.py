@@ -131,7 +131,7 @@ def checkResult(result_paths, ext):
 					CHR[str(chr)]=ALIGN
 
 				for chr in KEY:
-					RESULT.append(CHR[str(chr)])
+					RESULT.append(int(CHR[str(chr)]))
 				BOX.append(RESULT)
 
 		# -------------------------------
