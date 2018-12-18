@@ -1,0 +1,1 @@
+python mk-megainput.py -g test_data/test.gty -f protein_DB.fasta -r rs-amino -a test_data/test.ann -s test_data/test.skey > test_data/results.fasta
