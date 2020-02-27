@@ -1,0 +1,11 @@
+host idc
+	User kimbj
+	Port 22
+	HostName xx.xx.xx.xx
+	PubkeyAuthentication yes
+	PasswordAuthentication no
+	PreferredAuthentications publickey
+
+host 10.0.*.*
+	User user1
+	ProxyCommand ssh idc -q -W %h:%p
