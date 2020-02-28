@@ -29,7 +29,6 @@ class STinfo():
 
 	def __init__(self, IP):
 		self.IP=IP
-		self._ssh_client=None
 
 	def LIST_showFolder(self, FOLDER):
 		from random import shuffle
@@ -40,14 +39,14 @@ class STinfo():
 			DIR=DIR[:4]
 		return DIR
 
-	def INS_sshClient(self):
+	def LIST_selectST(self):
 		import paramiko
 
-		self._ssh_client=paramiko.SSHClient()
+		client=paramiko.SSHClient()
 		ssh_config=paramiko.SSHConfig()
 		
-		self._ssh_client._policy=paramiko.WarningPolicy()
-		self._ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+		client._policy=paramiko.WarningPolicy()
+		client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
 		user_config_file=os.path.expanduser(self.CONFIG_FILE)
 		try:
@@ -65,11 +64,7 @@ class STinfo():
 			user_config['username']=user_config['user']
 			del user_config['user']
 
-		self._ssh_client.connect(**user_config)
-		return self._ssh_client
-
-	def LIST_selectST(self):
-		client=self.INS_sshClient()
+		client.connect(**user_config)
 		stdin, stdout, stderr = client.exec_command('df -l \
 					| awk \' !/maha/ {if(length($2)> 9 && NR!=1) \
 					print substr($0,index($0,$2))}\'')
@@ -90,39 +85,13 @@ class STinfo():
 
 		return TOTAL_LIST
 
-	def LIST_mahaST(self):
-		TOTAL_LIST=[]
-		client=self.INS_sshClient()
-		stdin, stdout, stderr = client.exec_command('/usr/local/maha/gfs_lsvol -l | awk \'/maha/ {print $(NF-1),$(NF-2),$1}\'')
-		for line in [line.strip().split() for line in stdout.readlines()]:
-			trans=[]
-			for s in line:
-				if 'T' in s:
-					mu=float(s[:-1])*10**9
-					trans.append(mu)
-				elif 'G' in s:
-					mu=float(s[:-1])*10*6
-					trans.append(mu)
-				elif 'M' in s:
-					mu=float(s[:-1])*10*3
-					trans.append(mu)	
-				elif 'K' in s:
-					mu=float(s[:-1])
-					trans.append(mu)
-				else:
-					trans.append(s)
-
-			TOTAL_LIST.append([trans[0],trans[1],trans[0]-trans[1],str(trans[1]/trans[0]*100)+'%',trans[-1],''])
-		return TOTAL_LIST
 
 ### MAIN ###
 def main ():
 	BOX=pd.DataFrame(index=STinfo.TOTAL_HEAD)
 
 	DIC={'10.0.5.2':'#100-02', '10.0.5.3':'#100-03', '10.0.5.4':'#100-04',
-		'10.0.5.5':'#100-05', '10.0.5.6':'#160-06', '10.0.5.10':'#500-10',
-		'10.0.2.205':'#D205', '10.0.2.206':'#D206', '10.0.2.207':'#D207', 
-		'10.0.2.208':'#D208', '10.0.2.209':'#D209', '10.0.2.210':'#D210', '10.0.6.3':'#MAHA'}
+		'10.0.5.5':'#100-05', '10.0.5.6':'#160-06', '10.0.5.10':'#500-10'}
 	IP=list(DIC.keys())
 	natsorted(IP)
 	INDEX=1
@@ -132,18 +101,11 @@ def main ():
 		obj=STinfo(IP=ip)
 		
 		# extract storage information
-		if 'MAHA' in DIC[ip]:
-			for stinfo in obj.LIST_mahaST():
-				stinfo.insert(0,DIC[ip])
-				line=pd.Series(stinfo, index=STinfo.HEAD)
-				BOX[INDEX]=line
-				INDEX+=1
-		else:
-			for stinfo in obj.LIST_selectST():
-				stinfo.insert(0,DIC[ip])
-				line=pd.Series(stinfo, index=STinfo.HEAD)
-				BOX[INDEX]=line
-				INDEX+=1
+		for stinfo in obj.LIST_selectST():
+			stinfo.insert(0,DIC[ip])
+			line=pd.Series(stinfo, index=STinfo.HEAD)
+			BOX[INDEX]=line
+			INDEX+=1
 		
 		# change type 'float'
 		BOX=BOX.T.astype({'Size(TB)':'float','Used(TB)':'float','Available(TB)':'float'})
