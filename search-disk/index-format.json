@@ -1,0 +1,22 @@
+{
+	'indexs':[
+		{
+			'name':'file',
+			'type':'filed',
+			'delimiter':'\t',
+			'fieldNum':1
+		},
+                {
+                        'name':'size',
+                        'type':'filed',
+                        'delimiter':'\t',
+                        'fieldNum':2
+                },
+                {
+                        'name':'epoch-time',
+                        'type':'filed',
+                        'delimiter':'\t',
+                        'fieldNum':3
+                }
+	]
+}	
