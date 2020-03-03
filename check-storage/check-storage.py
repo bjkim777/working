@@ -101,10 +101,10 @@ class STinfo():
 					mu=float(s[:-1])*10**9
 					trans.append(mu)
 				elif 'G' in s:
-					mu=float(s[:-1])*10*6
+					mu=float(s[:-1])*10**6
 					trans.append(mu)
 				elif 'M' in s:
-					mu=float(s[:-1])*10*3
+					mu=float(s[:-1])*10**3
 					trans.append(mu)	
 				elif 'K' in s:
 					mu=float(s[:-1])
