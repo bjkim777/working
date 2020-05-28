@@ -128,7 +128,7 @@ def main (conf=''):
 		print("\'{}\' file could not be found. Aborting.".format(conf))
 		exit(1)
 
-	STG_IP=['10.0.5.'+str(i) for i in [2,3,4,5,6,10]]+['10.0.6.3']
+	STG_IP=['10.0.5.'+str(i) for i in [2,5,6,8,10,11,13]]+['10.0.6.3']
 
 	for ip in STG_IP:
 		obj=STinfo(IP=ip)
@@ -188,7 +188,22 @@ def main (conf=''):
         )
 
 	wb=openpyxl.Workbook()
-	ws=wb.active
+	ws0=wb.active
+	ws0.title='sum'
+	SUM=pd.DataFrame(VIEWER_BOX.sum(), columns=['client'])[3:].T
+
+	for r in dataframe_to_rows(SUM, header=True, index=True):
+		ws0.append(r)
+	ws0.delete_rows(2)
+
+	for row in ws0.iter_rows(max_col=len(list(ws0.columns)), max_row=len(list(ws0.rows)), min_row=1):
+		for i, cell in enumerate(row):
+			cell.border=CELL_BOX
+			if cell.row==1 or cell.column==1:
+				cell.font=Font(bold=True)
+				cell.fill=PatternFill(patternType='solid', fgColor=Color(rgb='FFDCDCDC')) # color : Gainsboro
+
+	ws=wb.create_sheet()
 	ws.title='show client'
 
 	# dataframe to excel
@@ -233,7 +248,7 @@ def main (conf=''):
 ### ACTION ### 
 if __name__ == "__main__":
 	#argv = getOpts()
-	CONFIG_FILE='host-server-user-200417.txt'
+	CONFIG_FILE='host-server-user-200527.txt'
 
 	main(conf=CONFIG_FILE)
 	sys.exit(0)
