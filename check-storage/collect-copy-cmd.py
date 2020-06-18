@@ -23,7 +23,7 @@ class STinfo():
 	
 	CONFIG_FILE='~/.ssh/config'
 	SQLITE_DB='/home/user1/miniconda3/cp-cmd.db'
-	HEAD=['ID', 'HOST', 'INDEV', 'INMOUNT', 'OUTDEV', 'OUTMOUNT', 'OUTSN', 'STIME', 'ETIME', 'CMD']
+	HEAD=['ID', 'HOST', 'INDEV', 'INMOUNT', 'DATA', 'OUTDEV', 'OUTMOUNT', 'OUTSN', 'STIME', 'ETIME', 'CMD']
 
 	def __init__(self, IP):
 		self.IP=IP
@@ -60,16 +60,16 @@ class STinfo():
 
 	def DF_sqlite3(self):
 		client=self.INS_sshClient()
-
-		stdin, stdout, stderr = client.exec_command('/home/user1/miniconda3/bin/sqlite3 {0} ".table"'.format(self.SQLITE_DB))
-		table=stdout.readlines()[0].strip()
+		table='copy2'
+		#stdin, stdout, stderr = client.exec_command('/home/user1/miniconda3/bin/sqlite3 {0} ".table"'.format(self.SQLITE_DB))
+		#table=stdout.readlines()[0].strip()
 		stdin2, stdout2, stderr2 = client.exec_command('/home/user1/miniconda3/bin/sqlite3 -csv {0} "pragma table_info({1})"'.format(self.SQLITE_DB, table))
 		HEAD=[line.strip().split(',')[1] for line in stdout2.readlines()]
-		stdin3, stdout3, stderr3 = client.exec_command('/home/user1/miniconda3/bin/sqlite3 -csv {0} "select * from {1}"'.format(self.SQLITE_DB, table))
+		stdin3, stdout3, stderr3 = client.exec_command('/home/user1/miniconda3/bin/sqlite3 {0} "select * from {1}"'.format(self.SQLITE_DB, table))
 		BODY=list( \
 			map(\
-				lambda x : x[0:7]+[time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(x[7])))]+x[8:], \
-				[line.strip().split(',') for line in stdout3.readlines()]))
+				lambda x : x[0:8]+[time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(int(x[8])))]+x[9:], \
+				[line.strip().split('|') for line in stdout3.readlines()]))
 
 		return pd.DataFrame(data=BODY, columns=HEAD)
 
@@ -87,6 +87,11 @@ def main ():
 		# create object
 		obj=STinfo(IP=ip)
 		BOX=BOX.append(obj.DF_sqlite3(), ignore_index=True)
+
+	REPORT=BOX[['STIME', 'DATA', 'HOST', 'INDEV', 'OUTDEV', 'OUTSN']]
+	REPORT['Data description']='-'
+	REPORT['Requester']='-'
+	REPORT=REPORT[['STIME', 'DATA', 'Data description', 'Requester', 'HOST', 'INDEV', 'OUTDEV', 'OUTSN']]
 	
 	##########################
 	# excel format
@@ -139,6 +144,33 @@ def main ():
 	# adjust auto column size
 	for key in list(COLUMN_WIDTHS.keys()):
 		ws.column_dimensions[get_column_letter(key)].width=COLUMN_WIDTHS[key]
+
+	ws1=wb.create_sheet()
+	ws1.title='report format'
+
+	for r in dataframe_to_rows(REPORT, header=True, index=False):
+		ws1.append(r)
+
+	for row in ws1.iter_rows(max_col=len(list(ws1.columns)), max_row=len(list(ws1.rows)), min_row=1):
+		for i, cell in enumerate(row) :
+			# column size
+			if i+1 in COLUMN_WIDTHS:
+				if COLUMN_WIDTHS[i+1]<len(str(cell.value))+5:
+					COLUMN_WIDTHS[i+1]=len(str(cell.value))+5
+			else:
+				COLUMN_WIDTHS[i+1]=len(str(cell.value))+5
+
+			# header style
+			if cell.row==1:
+				cell.font=Font(bold=True)
+				cell.fill=PatternFill(patternType='solid', fgColor=Color(rgb='FFDCDCDC')) # color : Gainsboro
+
+			# cell border
+			cell.border=CELL_BOX	
+
+	# adjust auto column size
+	for key in list(COLUMN_WIDTHS.keys()):
+		ws1.column_dimensions[get_column_letter(key)].width=COLUMN_WIDTHS[key]
 
 	wb.save(EXCEL)
 

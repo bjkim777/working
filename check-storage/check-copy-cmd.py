@@ -60,7 +60,6 @@ def DIC_mountList():
 				MOUNT[tmp[-1]+'/']=tmp[0]
 			else:
 				MOUNT[tmp[-1]]=tmp[0]
-
 	return MOUNT
 
 def LIST_formatingDev(findCopy, mountList):
@@ -77,6 +76,7 @@ def LIST_formatingDev(findCopy, mountList):
 
 	for ps in findCopy:
 		target=[]
+		target2=[]
 		count=0
 		for component in ps[-1]:
 			if '/' in component:
@@ -89,21 +89,23 @@ def LIST_formatingDev(findCopy, mountList):
 					else:
 						if dev in component:
 							target.append(dev)
+							target2.append(component)
+
 				if len(target)!=count:
 					target.append('/')
 
 		TOTAL.append([
 			'{0}_{1}'.format(ps[0], ps[1]), \
-			'{0}:{1}'.format(HOSTNAME, IP), \
+			'{0}({1})'.format(HOSTNAME, IP), \
 			','.join(list(map(lambda x: mountList[x], target[0:-1]))), \
 			','.join(target[0:-1]), \
+			','.join(target2[0:-1]), \
 			mountList[target[-1]], \
 			target[-1], \
 			TUPLE_hddSN(dev=mountList[target[-1]])[-1], \
 			ps[0], \
 			ps[2], \
 			' '.join(ps[-1])])
-
 	return TOTAL
 
 def main (db):
@@ -112,45 +114,46 @@ def main (db):
 		LIST_findCopy(), \
 		DIC_mountList() \
 		)
-	print(DATA)
-	print(DIC_mountList())
+	TABLE='copy2'
 
 	conn=sqlite3.connect(db)
 	cur=conn.cursor()
 
 	sql_create_table=\
-		"""CREATE TABLE IF NOT EXISTS copy(
+		"""CREATE TABLE IF NOT EXISTS {0}(
 				ID text PRIMARY KEY,
 				HOST text,
 				INDEV text,
 				INMOUNT text,
+				DATA text,
 				OUTDEV text,
 				OUTMOUNT text,
 				OUTSN text,
 				STIME integer,
 				ETIME integer,
 				CMD text
-			); """
+			); """.format(TABLE)
 	cur.execute(sql_create_table)
 
 	try:
 		sql=\
 		"INSERT INTO \
-			copy ( \
+			{0} ( \
 				ID, \
 				HOST, \
 				INDEV, \
 				INMOUNT, \
+				DATA, \
 				OUTDEV, \
 				OUTMOUNT, \
 				OUTSN, \
 				STIME, \
 				ETIME, \
-				CMD) VALUES (?,?,?,?,?,?,?,?,?,?);"
+				CMD) VALUES (?,?,?,?,?,?,?,?,?,?,?);".format(TABLE)
 		cur.executemany(sql,DATA)
 
 	except Exception as e:
-		sql="UPDATE copy SET ETIME=? WHERE ID=?;"
+		sql="UPDATE {0} SET ETIME=? WHERE ID=?;".format(TABLE)
 		cur.executemany(sql,list(map(lambda x:[x[-2],x[0]], DATA)))
 
 	conn.commit()
