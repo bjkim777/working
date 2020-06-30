@@ -135,26 +135,27 @@ def main (db):
 			); """.format(TABLE)
 	cur.execute(sql_create_table)
 
-	try:
-		sql=\
-		"INSERT INTO \
-			{0} ( \
-				ID, \
-				HOST, \
-				INDEV, \
-				INMOUNT, \
-				DATA, \
-				OUTDEV, \
-				OUTMOUNT, \
-				OUTSN, \
-				STIME, \
-				ETIME, \
-				CMD) VALUES (?,?,?,?,?,?,?,?,?,?,?);".format(TABLE)
-		cur.executemany(sql,DATA)
+	for line in DATA:
+		try:
+			sql=\
+			"INSERT INTO \
+				{0} ( \
+					ID, \
+					HOST, \
+					INDEV, \
+					INMOUNT, \
+					DATA, \
+					OUTDEV, \
+					OUTMOUNT, \
+					OUTSN, \
+					STIME, \
+					ETIME, \
+					CMD) VALUES (?,?,?,?,?,?,?,?,?,?,?);".format(TABLE)
+			cur.execute(sql,line)
 
-	except Exception as e:
-		sql="UPDATE {0} SET ETIME=? WHERE ID=?;".format(TABLE)
-		cur.executemany(sql,list(map(lambda x:[x[-2],x[0]], DATA)))
+		except Exception as e:
+			sql="UPDATE {0} SET ETIME=? WHERE ID=?;".format(TABLE)
+			cur.execute(sql,[line[-2],line[0]])
 
 	conn.commit()
 	conn.close()
