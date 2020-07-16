@@ -22,7 +22,7 @@ def getOpts():
 class STinfo():
 	
 	TOTAL_HEAD=['Storage', 'Size(TB)', 'Used(TB)', 'Available(TB)', 'Use%','Mounted', \
-	'Data List', 'Manager', 'Expiration Date', 'Backup']
+	'Data List', 'Manager', 'Expiration Date', 'Backup/Description']
 	
 	HEAD=['Storage', 'Size(TB)', 'Used(TB)', 'Available(TB)', 'Use%','Mounted','Data List']
 	CONFIG_FILE='~/.ssh/config'
@@ -64,6 +64,7 @@ class STinfo():
 		if 'user' in user_config:
 			user_config['username']=user_config['user']
 			del user_config['user']
+		print(user_config)
 
 		self._ssh_client.connect(**user_config)
 		return self._ssh_client
@@ -96,7 +97,7 @@ class STinfo():
 		stdin, stdout, stderr = client.exec_command('/usr/local/maha/gfs_lsvol -l | awk \'/maha/ {print $(NF-1),$(NF-2),$1}\'')
 		for line in [line.strip().split() for line in stdout.readlines()]:
 			trans=[]
-			for s in line:
+			for s in line[0:2]:
 				if 'T' in s:
 					mu=float(s[:-1])*10**9
 					trans.append(mu)
@@ -105,24 +106,29 @@ class STinfo():
 					trans.append(mu)
 				elif 'M' in s:
 					mu=float(s[:-1])*10**3
-					trans.append(mu)	
+					trans.append(mu)
 				elif 'K' in s:
 					mu=float(s[:-1])
+					trans.append(mu)
+				elif 'B' in s:
+					mu=float(s[:-1])*10**-3
 					trans.append(mu)
 				else:
 					trans.append(s)
 
-			TOTAL_LIST.append([trans[0],trans[1],trans[0]-trans[1],str(trans[1]/trans[0]*100)+'%',trans[-1],''])
+			TOTAL_LIST.append([trans[0],trans[1],trans[0]-trans[1],str(trans[1]/trans[0]*100)+'%',line[-1],''])
 		return TOTAL_LIST
 
 ### MAIN ###
 def main ():
 	BOX=pd.DataFrame(index=STinfo.TOTAL_HEAD)
 
-	DIC={'10.0.5.2':'#100-02', '10.0.5.3':'#100-03', '10.0.5.4':'#100-04',
-		'10.0.5.5':'#100-05', '10.0.5.6':'#160-06', '10.0.5.10':'#500-10',
+	DIC={#'10.0.5.2':'#100-02', #'10.0.5.3':'#100-03', '10.0.5.4':'#100-04',
+		'10.0.5.5':'#100-05', 
+		'10.0.5.6':'#160-06', '10.0.5.10':'#500-10',
 		'10.0.2.205':'#D205', '10.0.2.206':'#D206', '10.0.2.207':'#D207', 
-		'10.0.2.208':'#D208', '10.0.2.209':'#D209', '10.0.2.210':'#D210', '10.0.6.3':'#MAHA'}
+		'10.0.2.208':'#D208', '10.0.2.209':'#D209', '10.0.2.210':'#D210', 
+		'10.0.6.3':'#MAHA'}
 	IP=list(DIC.keys())
 	natsorted(IP)
 	INDEX=1
@@ -151,7 +157,7 @@ def main ():
 
 		# change 'sum cell' information
 		SUM=BOX.T[BOX.T.Storage==DIC[ip]].sum()
-		for col in ['Storage', 'Use%', 'Mounted', "Data List",'Manager', 'Expiration Date', 'Backup']:
+		for col in ['Storage', 'Use%', 'Mounted', "Data List",'Manager', 'Expiration Date', 'Backup/Description']:
 			if col=='Storage': 
 				SUM[col]=DIC[ip]
 			else:
