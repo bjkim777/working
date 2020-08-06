@@ -94,13 +94,13 @@ def main (DIR, DB):
 		else: DF=DF_CPU.T
 
 		try:
-			DF.to_sql(step, conn, chunksize=30000)
+			DF.to_sql(step, conn, chunksize=100000)
 		except:
 			cur=conn.cursor()
 			cur.execute('SELECT "index" FROM "{0}";'.format(step))
 			INDEX=set([x[0] for x in cur.fetchall()])
 			if len(INDEX)==0:
-				DF.to_sql(step, conn, if_exists='replace', chunksize=30000)
+				DF.to_sql(step, conn, if_exists='replace', chunksize=100000)
 				continue
 			INDEX_df=set(DF.index.to_list())
 			APPEND=list(INDEX_df-INDEX); APPEND.sort()
@@ -120,7 +120,10 @@ def main (DIR, DB):
 			if not APPEND:
 				continue
 			else:
-				DF.loc[APPEND].to_sql(step, conn, if_exists='append', chunksize=30000)
+				ADD=DF.loc[APPEND]
+				for add in list(HEAD-HEAD_df):
+					ADD[add]=0
+				ADD.to_sql(step, conn, if_exists='append', chunksize=100000)
 
 			conn.commit()
 			
