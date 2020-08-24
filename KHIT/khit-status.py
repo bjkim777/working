@@ -10,7 +10,7 @@ def getOpts():
 	parser = argparse.ArgumentParser(description = '')
 	parser.add_argument('-p', '--path', type=str, required=True, metavar= '<parent directory path>', help= """input parent directory path 
 		with \'DARC/pdb\' and \'RLDENVA/env_out\'""")
-	parser.add_argument('-d', '--db', type=str, default='khit-status.db', metavar= '<sqlite db>', help= 'sqlite db')
+	parser.add_argument('-d', '--db', type=str, default='khit-status.sql', metavar= '<sqlite db>', help= 'sqlite db')
 	argv = parser.parse_args()
 	return(argv)
 
@@ -85,7 +85,7 @@ class KHIT_status():
 def main (DIR, DB):
 	KHIT=KHIT_status(DIR)
 	DF_GPU, DF_CPU=KHIT.DF_final()
-	TABLE=['1st_gpu', '2nd_cpu']
+	TABLE=['DARC', 'DM']
 
 	conn=sqlite3.connect(DB)
 
