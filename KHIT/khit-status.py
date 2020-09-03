@@ -8,19 +8,19 @@ import sqlite3
 
 def getOpts():
 	parser = argparse.ArgumentParser(description = '')
-	parser.add_argument('-p', '--path', type=str, required=True, metavar= '<parent directory path>', help= """input parent directory path 
-		with \'DARC/pdb\' and \'RLDENVA/env_out\'""")
+	parser.add_argument('-g', '--gpu_path', type=str, required=True, metavar= '<parent directory path>', help= """input parent directory path with \'DARC/pdb""")
+	parser.add_argument('-c', '--cpu_path', type=str, metavar= '<parent directory path>', help= """input parent directory path and \'RLDENVA/env_out\'""")
 	parser.add_argument('-d', '--db', type=str, default='khit-status.sql', metavar= '<sqlite db>', help= 'sqlite db')
 	argv = parser.parse_args()
 	return(argv)
 
 class KHIT_status():
-	def __init__(self, PATH):
-		self._path=PATH
-
+	def __init__(self, GPU_PATH, CPU_PATH):
+		self._gpu_path=GPU_PATH
+		self._cpu_path=CPU_PATH
 	def DF_final(self):
-		PDB_DIR=self._path+'/DARC/pdb'
-		TAR_DIR=self._path+'/RLDENVA/env_out'
+		PDB_DIR=self._gpu_path+'/DARC/pdb'
+		TAR_DIR=self._cpu_path+'/RLDENVA/env_out'
 
 		if os.path.isdir(PDB_DIR):
 			command_line='find {0} -name  \'*.pdb\' | sort'.format(PDB_DIR)
@@ -28,7 +28,7 @@ class KHIT_status():
 		else:
 			raise Exception('\'{0}\' not found.'.format(PDB_DIR))
 		if os.path.isdir(TAR_DIR):
-			command_line='find {0} -name  \'*.tar.gz\' | sort'.format(TAR_DIR)
+			command_line='find {0} -name  \'*.tar.*\' | sort'.format(TAR_DIR)
 			DF_CPU=self._DF_targetStatus(self._LIST_fileList(command_line))
 		else:
 			# print('You must make \'{0}\' later. Now, I will make empty Dataframe.'.format(TAR_DIR))
@@ -82,8 +82,8 @@ class KHIT_status():
 
 
 ### MAIN ###
-def main (DIR, DB):
-	KHIT=KHIT_status(DIR)
+def main (GPU_DIR, CPU_DIR, DB):
+	KHIT=KHIT_status(GPU_DIR, CPU_DIR)
 	DF_GPU, DF_CPU=KHIT.DF_final()
 	TABLE=['DARC', 'DM']
 
@@ -92,7 +92,6 @@ def main (DIR, DB):
 	for i, step in enumerate(TABLE):
 		if i==0: DF=DF_GPU.T
 		else: DF=DF_CPU.T
-
 		try:
 			DF.to_sql(step, conn, chunksize=100000)
 		except:
@@ -105,19 +104,32 @@ def main (DIR, DB):
 			INDEX_df=set(DF.index.to_list())
 			APPEND=list(INDEX_df-INDEX); APPEND.sort()
 
-			cur.execute('PRAGMA TABLE_INFO("{0}")'.format(step))
+			cur.execute('PRAGMA TABLE_INFO("{0}")'.format(step)) 
 			HEAD= set([x[1] for x in cur.fetchall()][1:])
 			HEAD_df=set(DF.columns.to_list())
-
+			
+			## new header add 
 			for head in list(HEAD_df-HEAD):
 				cur.execute('ALTER TABLE "{0}" ADD COLUMN "{1}" INTEGER;'.format(step,head))
 				for index in list(INDEX):
+
 					if index in INDEX_df:
 						cur.execute('UPDATE "{0}" SET "{1}"={2} WHERE "index"="{3}";'.format(step, head, DF[head].loc[index], index))
 					else:
 						cur.execute('UPDATE "{0}" SET "{1}"={2} WHERE "index"="{3}";'.format(step, head, 0, index))
 
+			## check header exist
+			for lst in list(HEAD.intersection(HEAD_df)):
+				for index in INDEX:
+					if index in INDEX_df:
+						cur.execute('SELECT {0} FROM "{1}" WHERE "index"="{2}";'.format(lst ,step, index))
+						SQL_VAL=int(cur.fetchall()[0][0])
+						if DF[lst].loc[index]>SQL_VAL:
+							cur.execute('UPDATE "{0}" SET "{1}"="{2}" WHERE "index"="{3}";'.format(step,lst, DF[lst].loc[index], index))
+
+			##index add  
 			if not APPEND:
+				conn.commit()
 				continue
 			else:
 				ADD=DF.loc[APPEND]
@@ -132,5 +144,5 @@ def main (DIR, DB):
 if __name__ == "__main__":
 	argv = getOpts()
 
-	main( DIR=argv.path, DB=argv.db  )
+	main( GPU_DIR=argv.gpu_path, CPU_DIR=argv.cpu_path, DB=argv.db  )
 	sys.exit(0)
