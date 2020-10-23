@@ -15,7 +15,7 @@ import time
 
 def getOpts():
 	parser = argparse.ArgumentParser(description = '')
-	parser.add_argument('-e', '--excel', type=str, default='Kinase-hit_PDBs_details_v1.2_8_31_j.xlsx', metavar='<arg1>',  help= 'description')
+	parser.add_argument('-e', '--excel', type=str, default='Kinase-hit_PDBs_details_v1.2_9_08_j.xlsx', metavar='<arg1>',  help= 'description')
 	parser.add_argument('-d', '--db', type=str, default='khit-status.sql', metavar= '<sqlite db>', help= 'sqlite db')
 	argv = parser.parse_args()
 	return(argv)
@@ -54,12 +54,15 @@ def DF_excel(excel):
 	hinge_df=pd.DataFrame(hinge_count, columns=['Hinge', 'Hinge Count'])
 	hinge_df.index+=1
 
+	BOX['Lig']=BOX['Lig'].str.split('(', expand=True)
+
 	return pd.merge(BOX[['Kinase', 'PDB', 'Lig','Chain','차수']], hinge_df, left_index=True, right_index=True, how='outer')
 
 ### MAIN ###
 def main (db, excel):
 	DF1=DF_excel(excel)
 	DF2=DF_sqlite(db)
+	print(DF1)
 	print(DF2)
 
 	KEY=(DF1['Kinase']+"_"+DF1['PDB'].str.lower()+DF1['Chain'].astype(str)+"_"+DF1['Lig'].astype(str))
@@ -72,17 +75,17 @@ def main (db, excel):
 	
 	MERGED_DB['postDM']=0
 	MERGED_DB['preDM']=0
-	MERGED_DB['preDM'][MERGED_DB['DARC'] > 0]=1
+	MERGED_DB['preDM'][MERGED_DB['DM'] > 0]=1
 	MERGED_DB['Complete']=''
 	MERGED_DB['Server-info']='-'
-	MERGED_DB['PDB(Lig)']=MERGED_DB['PDB']+"("+MERGED_DB['Lig']+")"
+	MERGED_DB['PDB(Lig)']=MERGED_DB['PDB']+"("+MERGED_DB['Lig'].astype(str)+")"
 
 	MERGED_DB=MERGED_DB[['KEY', 'Kinase', 'PDB(Lig)', '차수', 'Hinge', 'Hinge Count', 'DARC', 'preDM', 'DM', 'postDM', 'Complete', 'Server-info']]
 	print(MERGED_DB)
 
-	##########################
-	# excel format
-	##########################
+	# ##########################
+	# # excel format
+	# ##########################
 	EXCEL='{}-khit-report.xlsx'.format(datetime.today().strftime('%y%m%d-%H%M%S'))
 	CELL_BOX = Border(left=Side(border_style="thin", 
                    color='FF000000'),
