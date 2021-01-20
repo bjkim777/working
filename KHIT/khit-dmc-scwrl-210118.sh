@@ -10,10 +10,10 @@ export LC_COLLATE=C
 declare -r prog_cmd=$(ps --no-headers -o command "$$")
 error() {
 	printf -- '%s :\n%s\n' "$prog_cmd" "$*" >&2
-    set +eE
+	set +eE
     trap -  ERR
     trap '' INT
-	exit $(false)
+    exit $(false)
 }
 
 err_report() {
@@ -32,11 +32,11 @@ OUTPUT_ARG=$3
 
 if [ -z $DARCPDB_ARG ] && [ -z $WORKDIR_ARG ] && [ -z $OUTPUT_ARG ]; then
 	echo
-	echo "usage) bash $0 [DARC output pdb] [working dir] [final output]"
+	echo "usage) bash $0 [DARC output pdb] [working dir] [final output path]"
 	echo
 	echo "	arg1) DARC output pdb (absolute path)"
 	echo "	arg2) Working directory  ex) Server local disk"
-	echo "	arg3) Final output"
+	echo "	arg3) Final output path"
 	echo
 	exit 1
 fi
@@ -124,7 +124,7 @@ _01_mpiRLD() {
 	local _12_crystal_complex_pdb=$TMP_DIR/crystal_complex.pdb
 	local _13_option=$TMP_DIR/option
 	local _14_score_sc=$TMP_DIR/score_${SAMPLE_NAME}.sc
-	local _15_total_score_r_tsv=$TMP_DIR/total_score_r.tsv
+	local _15_total_score_r_tsv=$STORE_DIR/${SAMPLE_NAME}_total_score_r.tsv
 
 	# 1)
 	awk '/HETATM/ && /'${LIG}'/ && !/OXT/ {print} END {print "END"}' $_00_darc_pdb > $_01_ligand_pdb
@@ -248,9 +248,9 @@ _04_sumEnva_a(){
 			if ($6"_"$4"_"$3 in REF){
 				if ($1=="ATOM" || $1=="HETATM") {
 						if(name in ARR_raccs)
-							{ARR_raccs[name]=ARR_raccs[name]"\t"$(NF)+1; HEAD=HEAD"\t"$6"_"$4"_"$3}
+							{ARR_raccs[name]=ARR_raccs[name]"\t"$(NF)+1; HEAD=HEAD"\tAA_"$6"_"$4"_"$3}
 						else
-							{ARR_raccs[name]=$(NF)+1 ; HEAD=$6"_"$4"_"$3}
+							{ARR_raccs[name]=$(NF)+1 ; HEAD="AA_"$6"_"$4"_"$3}
 				}
 			}
 		}
@@ -276,7 +276,8 @@ _04_sumEnva_a(){
 
 		print "PDB",HEAD,"total_rec_acc\tdelta_racc";
 		for (pdb in ARR_raccs){
-			print pdb, ARR_raccs[pdb], ARR_racc_sum[pdb], ARR_racc_sum[pdb]-VAR_mt_sum
+			VAR_del_racc=ARR_racc_sum[pdb]-VAR_mt_sum
+			print pdb, ARR_raccs[pdb], ARR_racc_sum[pdb], VAR_del_racc
 		}
 	}' ${ENVA_LIB} ${_17_crystal_complex_aa_pdb} ${_19_enva_a_outs[@]} > $_21_total_rac_ct
 }
@@ -387,12 +388,15 @@ _05_sumEnva_c(){
 				else {
 					VAR_min_dist="-"
 				}
+				VAR_ratio=ARR_matching_count[pdb]/length(REF)
+				VAR_cts=length(hdist)-(length(ARR_tn_nn[name]))^2
+
 				print \
 				pdb,
 				VAR_min_dist,
-				length(hdist)-(length(ARR_tn_nn[name]))^2,
+				VAR_cts,
 				ARR_ave_lig_acc[pdb],
-				ARR_matching_count[pdb]/length(REF),
+				VAR_ratio,
 				ARR_matching_count[pdb]-(ARR_n_bb_n[pdb])^2
 			}
 
@@ -439,8 +443,8 @@ _07_mergeEnva(){
 	}' > $_26_total_hinge_scwrl
 }
 
-_08_rmTmp() {
-	rm -rf $TMP_DIR
+_08_cleanTmp() {
+	rm -rf $TMP_DIRk
 	rm $DOCK_RES_DIR/*_{het,t}.pdb
 	rm $DOCK_RES_SCWRL_DIR/*out
 }
@@ -450,10 +454,13 @@ _09_compressData() {
 	local _output=$2
 
 	cd $STORE_DIR/..
-	cp $_00_darc_pdb $STORE_DIR
-	tar cfz $_output/${SAMPLE_NAME}_scwrl.tar.gz $SAMPLE_NAME
+	cp ${_00_darc_pdb} ${STORE_DIR}
+	tar cfz $_output/${SAMPLE_NAME}_scwrl.tar.gz ${SAMPLE_NAME}
 }
 
+_10_rmWorkDir() {
+	rm -r $STORE_DIR
+}
 #####################
 # MAIN
 #####################
@@ -462,15 +469,16 @@ main() {
 	local _output=$2
 
 	time _00_checkToolLibDir
-	time _01_mpiRLD ${_00_darc_pdb}	# 50min
-	time _02_multiScwrl4						# 30min
-	time _03_multiEnva							# 4min
-	time _04_sumEnva_a							# 1min
-	time _05_sumEnva_c							# 1min
+	time _01_mpiRLD ${_00_darc_pdb}				# 50min - 샘플에 따라 변화함
+	time _02_multiScwrl4					# 30min
+	time _03_multiEnva					# 4min
+	time _04_sumEnva_a					# 1min
+	time _05_sumEnva_c					# 1min
 	time _06_rmsd ${_00_darc_pdb}
 	time _07_mergeEnva
-	time _08_rmTmp
-	time _09_compressData ${_00_darc_pdb} ${_output}
+	time _08_cleanTmp
+	time _09_compressData ${_00_darc_pdb} ${_output}	# 3min
+	time _10_rmWorkDir
 
 	trap - RETURN INT
 	echo "==done==" >&2
